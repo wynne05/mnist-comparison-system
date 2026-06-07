@@ -125,7 +125,6 @@ function preprocessCanvas(sourceCanvas: HTMLCanvasElement) {
     const b = imageData.data[offset + 2];
     const grayscale = (r + g + b) / 3;
 
-    // 用户使用深色笔在白底上书写，因此需要做颜色反转，匹配 MNIST 的白字黑底分布。
     const inverted = 255 - grayscale;
     const normalized = Math.max(0, Math.min(1, inverted / 255));
 
@@ -175,7 +174,7 @@ export default function Sandbox() {
     context.fillRect(0, 0, canvas.width, canvas.height);
     context.lineCap = "round";
     context.lineJoin = "round";
-    context.lineWidth = 18;
+    context.lineWidth = 26;
     context.strokeStyle = "#111827";
   }, []);
 
@@ -402,23 +401,90 @@ export default function Sandbox() {
         </button>
       </div>
 
-      <div className="sandbox-layout">
-        <div className="canvas-panel">
-          <canvas
-            ref={canvasRef}
-            width={280}
-            height={280}
-            className="digit-canvas"
-            onPointerDown={startDrawing}
-            onPointerMove={draw}
-            onPointerUp={finishDrawing}
-            onPointerCancel={finishDrawing}
-            aria-label="Handwriting canvas"
-          />
-          <p className="canvas-hint">支持鼠标、触控板和触屏设备输入；松开后自动触发推理。</p>
+      {/* 修改点 1: 确保布局在宽屏下采用并排 Flex 布局 */}
+      <div 
+        className="sandbox-layout" 
+        style={{ 
+          display: "flex", 
+          flexDirection: "row", 
+          flexWrap: "wrap", 
+          gap: "24px", 
+          marginTop: "24px" 
+        }}
+      >
+        
+        {/* 左侧面板（输入区）：包含画布、提示文字、28×28预处理预览 */}
+        <div 
+          className="canvas-panel" 
+          style={{ 
+            flex: 1, 
+            minWidth: "300px", 
+            display: "flex", 
+            flexDirection: "column", 
+            gap: "16px" 
+          }}
+        >
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+            <canvas
+              ref={canvasRef}
+              width={280}
+              height={280}
+              className="digit-canvas"
+              onPointerDown={startDrawing}
+              onPointerMove={draw}
+              onPointerUp={finishDrawing}
+              onPointerCancel={finishDrawing}
+              aria-label="Handwriting canvas"
+            />
+            <p className="canvas-hint" style={{ marginTop: "12px", textAlign: "center" }}>
+              支持鼠标、触控板和触屏设备输入；松开后自动触发推理。
+            </p>
+          </div>
+
+          {/* 预处理结果面板：已从右侧移至左侧，放在画布下方 */}
+          {previewUrl ? (
+            <div 
+              className="preview-box" 
+              style={{ 
+                display: "flex", 
+                flexDirection: "column", 
+                alignItems: "center", 
+                padding: "16px",
+                backgroundColor: "#f9fafb",
+                borderRadius: "8px",
+                border: "1px dashed #e5e7eb"
+              }}
+            >
+              <span style={{ fontSize: "0.9rem", color: "#6b7280", marginBottom: "8px", fontWeight: "bold" }}>
+                28×28 预处理结果 (MNIST 实际输入)
+              </span>
+              <img 
+                src={previewUrl} 
+                alt="预处理后的 28x28 输入图像" 
+                style={{ 
+                  width: "84px", // 放大至 84px，更加方便肉眼观察
+                  height: "84px", 
+                  imageRendering: "pixelated", // 保持像素块感
+                  border: "1px solid #d1d5db",
+                  backgroundColor: "#000",
+                  borderRadius: "4px"
+                }} 
+              />
+            </div>
+          ) : null}
         </div>
 
-        <div className="result-panel">
+        {/* 右侧面板（展示区）：包含预测结果、状态框、报错信息、概率分布 */}
+        <div 
+          className="result-panel" 
+          style={{ 
+            flex: 1.2, 
+            minWidth: "320px", 
+            display: "flex", 
+            flexDirection: "column", 
+            gap: "16px" 
+          }}
+        >
           <div className="result-summary">
             <div>
               <span className="result-label">当前模型</span>
@@ -440,16 +506,9 @@ export default function Sandbox() {
             ) : null}
           </div>
 
-          {previewUrl ? (
-            <div className="preview-box">
-              <span>28×28 预处理结果</span>
-              <img src={previewUrl} alt="预处理后的 28x28 输入图像" />
-            </div>
-          ) : null}
-
           {errorMessage ? <div className="error-box">{errorMessage}</div> : null}
 
-          <div className="probability-card">
+          <div className="probability-card" style={{ marginTop: "0" }}>
             <h3>类别概率分布</h3>
             <div className="probability-list">
               {probabilities.map((probability, digit) => (
@@ -467,6 +526,7 @@ export default function Sandbox() {
             </div>
           </div>
         </div>
+
       </div>
     </section>
   );

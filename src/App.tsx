@@ -24,7 +24,7 @@ export default function App() {
       <header className="hero-section">
         <div className="hero-copy">
           <span className="eyebrow">React + PyTorch + ONNX Runtime Web</span>
-          <h1>MNIST 多模型推理与可视化实验台</h1>
+          <h1 className="app-title">手写数字识别系统</h1>
           <p>
             在同一块画布上体验 3 种经典模型的推理表现，观察训练曲线，并理解
             PyTorch 训练、ONNX 导出与浏览器端推理的完整闭环。
@@ -47,7 +47,7 @@ export default function App() {
         </div>
 
         <div className="hero-panel card">
-          <h2>端到端工作流</h2>
+          <h2>工作流</h2>
           <div className="workflow-list">
             {workflowSteps.map((step, index) => (
               <div className="workflow-item" key={step.title}>
@@ -63,14 +63,9 @@ export default function App() {
       </header>
 
       <main className="dashboard-grid">
-        <section className="sandbox-column">
-          <Sandbox />
-        </section>
-
-        <section className="insight-column">
-          <DatasetIntro />
-          <ModelCompare />
-        </section>
+        <Sandbox />
+        <DatasetIntro />
+        <ModelCompare />
       </main>
 
       <footer className="app-footer">
