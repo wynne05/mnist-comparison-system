@@ -21,6 +21,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 MODEL_OUTPUT_DIR = PROJECT_ROOT / "public" / "models"
 ASSET_OUTPUT_DIR = PROJECT_ROOT / "src" / "assets"
 DATA_DIR = PROJECT_ROOT / "training" / "data"
+PUBLIC_CHART_DIR = PROJECT_ROOT / "public" / "charts"
 
 
 class LogisticRegression(nn.Module):
@@ -231,7 +232,7 @@ def export_onnx(model: nn.Module, destination: Path) -> None:
         dummy_input,
         destination.as_posix(),
         export_params=True,
-        opset_version=13,
+        opset_version=18,
         do_constant_folding=True,
         input_names=["input"],
         output_names=["output"],
