@@ -17,6 +17,8 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 from torchvision import datasets, models, transforms
 
+import onnx
+
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 MODEL_OUTPUT_DIR = PROJECT_ROOT / "public" / "models"
 ASSET_OUTPUT_DIR = PROJECT_ROOT / "src" / "assets"
@@ -227,6 +229,11 @@ def export_onnx(model: nn.Module, destination: Path) -> None:
     model = model.cpu().eval()
     dummy_input = torch.randn(1, 1, 28, 28, dtype=torch.float32)
 
+    # 核心修复：将键从 "input" 修改为 "x"，与 forward(self, x) 的参数名对应
+    batch_dim = torch.export.Dim("batch_size", min=1, max=1024)
+    dynamic_shapes = {"x": {0: batch_dim}}
+
+    # 1. 执行导出
     torch.onnx.export(
         model,
         dummy_input,
@@ -234,13 +241,23 @@ def export_onnx(model: nn.Module, destination: Path) -> None:
         export_params=True,
         opset_version=18,
         do_constant_folding=True,
-        input_names=["input"],
+        input_names=["input"],       # ONNX 节点名称依然可以保持为 "input"
         output_names=["output"],
-        dynamic_axes={
-            "input": {0: "batch_size"},
-            "output": {0: "batch_size"},
-        },
+        dynamic_shapes=dynamic_shapes,
     )
+
+    # 2. 重新加载并打包为不含外部数据的单文件
+    try:
+        onnx_model = onnx.load(destination.as_posix())
+        onnx.save(onnx_model, destination.as_posix(), save_as_external_data=False)
+        
+        # 3. 清理外部数据文件
+        data_file = destination.with_suffix(".onnx.data")
+        if data_file.exists():
+            data_file.unlink()
+            print(f"Removed external data file: {data_file}")
+    except Exception as e:
+        print(f"Warning: Failed to bundle weights into ONNX file: {e}")
 
 
 def train_model(
